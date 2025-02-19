@@ -211,6 +211,7 @@ class TongyiLargeLanguageModel(LargeLanguageModel):
         """
         full_text = ""
         tool_calls = []
+        is_reasoning_started = False
         for index, response in enumerate(responses):
             if response.status_code not in {200, HTTPStatus.OK}:
                 raise ServiceUnavailableError(
@@ -249,7 +250,10 @@ class TongyiLargeLanguageModel(LargeLanguageModel):
                     ),
                 )
             else:
-                resp_content = response.output.choices[0].message.content
+                message = response.output.choices[0].message
+                resp_content, is_reasoning_started = self._wrap_thinking_by_reasoning_content(
+                    message, is_reasoning_started)
+
                 if not resp_content:
                     if "tool_calls" in response.output.choices[0].message:
                         tool_calls = response.output.choices[0].message["tool_calls"]
